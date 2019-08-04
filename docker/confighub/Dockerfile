@@ -1,0 +1,1 @@
+FROM confighub/confighubplatform:latest

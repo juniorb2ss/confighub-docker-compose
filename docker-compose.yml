@@ -1,0 +1,34 @@
+version: '3.7'
+services:
+  confighub:
+    build:
+      context: docker/confighub
+    ports:
+      - 8080:80
+      - 8443:443
+    env_file:
+      - .env
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:5.7
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: configHub
+      MYSQL_ROOT_PASSWORD: confighub
+
+  confighub-db-manager:
+    depends_on:
+      - mysql
+    healthcheck:
+      test: find -name "confighub-db-manager-completed" | grep -q "."
+      timeout: 30s
+      retries: 10
+      start_period: 1m
+    build:
+      context: docker/db-manager
+      args:
+        REPO: https://github.com/ConfigHubPub/Database-Manager.git
+    command: [sh, -c, "java -jar build/libs/ConfigHubDBManager-1.8.jar -t=mysql -r=jdbc:mysql://mysql:3306/configHub -u=root -p=confighub && touch confighub-db-manager-completed && tail -f /dev/null"]
